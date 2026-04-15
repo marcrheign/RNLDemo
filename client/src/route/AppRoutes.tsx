@@ -1,18 +1,23 @@
-import { Route, Routes } from "react-router-dom"
-import AppLayout from "../layout/AppLayout"
+import { Route, Routes } from "react-router-dom";
+import AppLayout from "../layout/AppLayout";
+import GenderMainPage from "../pages/Gender/GenderMainPage";
+import EditGenderPage from "../pages/Gender/EditGenderPage";
+import DeleteGenderPage from "../pages/Gender/DeleteGenderPage";
+import UserMainPage from "../pages/User/UserMainPage";
 
-const SampleComponent = () => {
-  return (
-    <h1 className="text-red-600">Hello World</h1>
-  )
-}
-
-export const AppRoutes = () => {
+const AppRoutes = () => {
   return (
     <Routes>
       <Route element={<AppLayout />}>
-        <Route index element={<SampleComponent />} />
+        <Route path="/" element={<GenderMainPage />} />
+        <Route path="/gender" element={<GenderMainPage />} />
+        <Route path="/gender/edit" element={<EditGenderPage />} />
+        <Route path="/gender/delete" element={<DeleteGenderPage />} />
+        <Route path="/users" element={<UserMainPage />}/>
       </Route>
     </Routes>
-  )
-}
+  );
+};
+
+export default AppRoutes;
+export { AppRoutes };
