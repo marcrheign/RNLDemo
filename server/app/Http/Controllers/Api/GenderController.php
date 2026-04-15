@@ -34,4 +34,26 @@ class GenderController extends Controller
         ], 200);
     }
 
+    public function getGender($genderId) {
+       $gender = Gender::find($genderId);
+
+       return response()->json([
+        'gender' => $gender
+       ], 200);
+    }
+
+    public function updateGender(Request $request, Gender $gender){
+        $validated = $request->validate([
+            'gender' => ['required', 'min:3', 'max:30']
+        ]);
+
+        $gender->update([
+            'gender' => $validated['gender']
+        ]);
+
+        return response()->json([
+            'gender' => $gender,
+            'message' => 'Gender Successfully Updated.'
+        ], 200);
+    }
 }

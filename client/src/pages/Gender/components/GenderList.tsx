@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FC } from "react";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "../../../components/Table";
 import GenderService from "../../../services/GenderService";
 import Spinner from "../../../components/Spinner/Spinner";
+import { Link } from "react-router-dom";
 
 interface GenderColumns {
   id: number
@@ -57,6 +58,7 @@ const GenderList: FC<GenderListProps> = ({ refreshKey }) => {
                 <TableCell isHeader className="px-5 py-3 font-medium text-center">
                   Action
                 </TableCell>
+
               </TableRow>
             </TableHeader>
 
@@ -72,7 +74,13 @@ const GenderList: FC<GenderListProps> = ({ refreshKey }) => {
                   <TableRow className="hover:bg-gray-100" key={index}>
                     <TableCell className="px-4 py-3 text-center">{index + 1}</TableCell>
                     <TableCell className="px-4 py-3 text-start">{gender.gender}</TableCell>
-                    <TableCell className="px-4 py-3 text-center">-</TableCell>
+                    <TableCell className="px-4 py-3 text-center">
+                      <div className="flex justify-center items-center">
+                        <Link to={`/gender/edit/${gender.id}`} className="text-green-600 font-medium hover:underline">
+                          Edit
+                        </Link>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
