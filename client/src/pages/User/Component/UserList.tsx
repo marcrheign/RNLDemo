@@ -1,4 +1,4 @@
-import { useEffect, useState, type FC } from "react"
+import { useCallback, useEffect, useState, type FC, type UIEvent } from "react"
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "../../../components/Table"
 import UserService from "../../../services/UserService"
 import Spinner from "../../../components/Spinner/Spinner"
@@ -25,24 +25,50 @@ interface UserRow {
 const Userlist: FC<UserlistProps>= ({onAdduser, onEditUser, onDeleteUser, refreshKey}) => {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
 
-  const handleLoadUsers = async () => {
+  const handleLoadUsers = useCallback(async (nextPage = 1, append = false) => {
     try {
-      setLoading(true);
-      const res = await UserService.loadUsers();
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
+
+      const res = await UserService.loadUsers(nextPage);
       if (res.status === 200) {
-        setUsers(res.data.users ?? []);
+        const nextUsers = res.data.users ?? [];
+        setUsers((prev) => (append ? [...prev, ...nextUsers] : nextUsers));
+        setPage(res.data.current_page ?? nextPage);
+        setHasMore(Boolean(res.data.has_more));
       }
     } catch (error) {
       console.error("Unexpected server error occurred during loading users:", error);
     } finally {
-      setLoading(false);
+      if (append) {
+        setLoadingMore(false);
+      } else {
+        setLoading(false);
+      }
     }
-  };
+  }, []);
 
   useEffect(() => {
-    void handleLoadUsers();
-  }, [refreshKey]);
+    void handleLoadUsers(1, false);
+  }, [handleLoadUsers, refreshKey]);
+
+  const handleScroll = (e: UIEvent<HTMLDivElement>) => {
+    if (loading || loadingMore || !hasMore) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 80;
+
+    if (isNearBottom) {
+      void handleLoadUsers(page + 1, true);
+    }
+  };
 
   const getFullName = (user: UserRow) => {
     const middlePart = user.middle_name ? ` ${user.middle_name}` : "";
@@ -76,7 +102,10 @@ const Userlist: FC<UserlistProps>= ({onAdduser, onEditUser, onDeleteUser, refres
   return (
     <>
     <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-        <div className="max-w-full max-h-[calc(100vh)] overflow-x-auto">
+        <div
+          className="max-w-full max-h-[calc(100vh-12rem)] overflow-auto"
+          onScroll={handleScroll}
+        >
           <Table>
             <caption>
                 <div className="border-b border-gray-100">
@@ -182,6 +211,11 @@ const Userlist: FC<UserlistProps>= ({onAdduser, onEditUser, onDeleteUser, refres
           </Table>
         </div>
       </div>
+      {users.length > 0 && loadingMore && (
+        <div className="flex justify-center p-4 border-t border-gray-100 bg-white">
+          <Spinner size="sm" />
+        </div>
+      )}
     </>
   )
 }

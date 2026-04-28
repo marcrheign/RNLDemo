@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\GenderController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
@@ -21,6 +22,14 @@ Route::controller(UserController::class)->prefix('/user')->group(function () {
     Route::post('/storeUser', 'storeUser');
     Route::put('/updateUser/{userId}', 'updateUser');
     Route::delete('/deleteUser/{userId}', 'deleteUser');
+});
+
+Route::controller(AuthController::class)->prefix('/auth')->group(function () {
+    Route::post('/login', 'login');
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/me', 'me');
+        Route::post('/logout', 'logout');
+    });
 });
 
 // Route::get('/user', function (Request $request) {

@@ -1,10 +1,43 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useSidebar } from "../contexts/SidebarContext";
 import { useHeader } from "../contexts/HeaderContext";
+import AuthService from "../services/AuthService";
+
+interface StoredUser {
+  first_name?: string;
+  last_name?: string;
+  username?: string;
+}
 
 const AppHeader = () => {
   const {isOpen, toggleUserMenu} = useHeader()
   const { toggleSidebar } = useSidebar()
+  const navigate = useNavigate();
+  const storedUserRaw = localStorage.getItem("user");
+  let storedUser: StoredUser = {};
+
+  try {
+    storedUser = storedUserRaw ? (JSON.parse(storedUserRaw) as StoredUser) : {};
+  } catch {
+    storedUser = {};
+  }
+
+  const displayName =
+    `${storedUser.first_name ?? ""} ${storedUser.last_name ?? ""}`.trim() || storedUser.username || "User";
+  const displayUsername = storedUser.username || "Not available";
+
+  const handleLogout = async () => {
+    try {
+      await AuthService.logout();
+    } catch (error) {
+      console.error("Unexpected server error occurred during logout:", error);
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      navigate("/login", { replace: true });
+    }
+  };
+
   return (
     <>
       <nav className="fixed top-0 z-50 h-16 w-full border-b border-slate-700 bg-slate-800">
@@ -33,15 +66,22 @@ const AppHeader = () => {
             <div className={`absolute right-0 top-full mt-2 z-[60] ${isOpen ? "block" : "hidden"} bg-slate-800 border border-slate-700 rounded-md shadow-lg w-44`} id="dropdown-user">
               <div className="px-4 py-3 border-b border-slate-700" role="none">
                 <p className="text-sm font-medium text-white" role="none">
-                  Neil Sims
+                  {displayName}
                 </p>
                 <p className="text-sm text-slate-300 truncate" role="none">
-                  neil.sims@flowbite.com
+                  {displayUsername}
                 </p>
               </div>
               <ul className="p-2 text-sm text-slate-100 font-medium" role="none">
                 <li>
-                  <Link to="#" className="inline-flex items-center w-full p-2 hover:bg-slate-700 hover:text-white rounded-md" role="menuitem">Sign out</Link>
+                  <button
+                    type="button"
+                    className="inline-flex items-center w-full p-2 hover:bg-slate-700 hover:text-white rounded-md cursor-pointer"
+                    role="menuitem"
+                    onClick={handleLogout}
+                  >
+                    Sign out
+                  </button>
                 </li>
               </ul>
             </div>

@@ -23,7 +23,7 @@ export interface UpdateUserPayload {
 }
 
 const UserService = {
-  loadUsers: async () => AxiosInstance.get("/user/loadUsers"),
+  loadUsers: async (page = 1) => AxiosInstance.get(`/user/loadUsers?page=${page}`),
   getUser: async (userId: number) => AxiosInstance.get(`/user/getUser/${userId}`),
   storeUser: async (payload: StoreUserPayload) => AxiosInstance.post("/user/storeUser", payload),
   updateUser: async (userId: number, payload: UpdateUserPayload) =>

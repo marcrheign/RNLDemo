@@ -14,10 +14,14 @@ class UserController extends Controller
             ->where('tbl_users.is_deleted', false)
             ->select('tbl_users.*', 'tbl_genders.gender as gender_name')
             ->orderByDesc('tbl_users.id')
-            ->get();
+            ->paginate(15);
 
         return response()->json([
-            'users' => $users,
+            'users' => $users->items(),
+            'current_page' => $users->currentPage(),
+            'last_page' => $users->lastPage(),
+            'has_more' => $users->hasMorePages(),
+            'total' => $users->total(),
         ], 200);
     }
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import BackButton from "../../../components/Button/BackButton";
 import SubmitButton from "../../../components/Button/SubmitButton";
@@ -15,7 +15,7 @@ const DeleteGenderForm = () => {
 
   const { gender_id: genderId } = useParams();
 
-  const handleGetGender = async (id: string | number) => {
+  const handleGetGender = useCallback(async (id: string | number) => {
     try {
       setLoadingGet(true);
       const res = await GenderService.getGender(id);
@@ -34,7 +34,7 @@ const DeleteGenderForm = () => {
     } finally {
       setLoadingGet(false);
     }
-  };
+  }, [navigate]);
 
   const handleDeleteGender = async (e: FormEvent) => {
     e.preventDefault();
@@ -67,7 +67,7 @@ const DeleteGenderForm = () => {
         state: { toastMessage: "Missing gender id." },
       });
     }
-  }, [genderId, navigate]);
+  }, [genderId, handleGetGender, navigate]);
 
   return (
    <>
