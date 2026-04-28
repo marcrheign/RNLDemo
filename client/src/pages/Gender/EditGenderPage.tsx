@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import ToastMessage from "../../components/ToastMessage/ToastMessage";
-import { useToastMessage } from "../../hooks/useToastMessage";
-import EditGenderForm from "./EditGenderForm"; // make sure this path is correct
+import { useToastMessage } from "../../hooks/UseToastmessage";
+import EditGenderForm from "./components/EditGenderForm";
 
 const EditGenderPage = () => {
   useEffect(() => {
@@ -24,7 +24,7 @@ const EditGenderPage = () => {
       />
       <EditGenderForm onGenderUpdated={showToastMessage} />
     </>
-  ); // ❗ fixed here (was ":" before)
+  );
 };
 
 export default EditGenderPage;

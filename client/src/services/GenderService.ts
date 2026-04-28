@@ -1,41 +1,20 @@
 import AxiosInstance from "./AxiosInstance";
 
+interface GenderPayload {
+  gender: string;
+}
+
 const GenderService = {
-  loadGenders: async () => {
-    try {
-      const response = await AxiosInstance.get("/gender/loadGenders");
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  },
+  loadGenders: async () => AxiosInstance.get("/gender/loadGenders"),
 
-  storeGender: async (data: any) => {
-    try {
-      const response = await AxiosInstance.post("/gender/storeGender", data);
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  },
+  storeGender: async (data: GenderPayload) => AxiosInstance.post("/gender/storeGender", data),
 
-  getGender: async (genderId: string | number) => {
-    try {
-      const response = await AxiosInstance.get(`/gender/getGender/${genderId}`);
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  },
+  getGender: async (genderId: string | number) => AxiosInstance.get(`/gender/getGender/${genderId}`),
 
-  updateGender: async (genderId: string | number, data: any) => {
-    try {
-      const response = await AxiosInstance.put(`/gender/updateGender/${genderId}`, data);
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  }
+  updateGender: async (genderId: string | number, data: GenderPayload) =>
+    AxiosInstance.put(`/gender/updateGender/${genderId}`, data),
+
+  deleteGender: async (genderId: string | number) => AxiosInstance.delete(`/gender/deleteGender/${genderId}`)
 };
 
 export default GenderService;

@@ -1,4 +1,5 @@
 import { useEffect, useState, type FC, type FormEvent } from "react";
+import type { AxiosError } from "axios";
 import BackButton from "../../../components/Button/BackButton";
 import SubmitButton from "../../../components/Button/SubmitButton";
 import FloatingLabelInput from "../../../components/Input/FloatingLabelInput";
@@ -9,6 +10,10 @@ import GenderService from "../../../services/GenderService";
 
 interface EditGenderFormProps {
   onGenderUpdated: (message: string) => void
+}
+
+interface ValidationErrorResponse {
+  errors: GenderFieldErrors;
 }
 
 const EditGenderForm: FC<EditGenderFormProps> = ({ onGenderUpdated }) => {
@@ -27,7 +32,7 @@ const EditGenderForm: FC<EditGenderFormProps> = ({ onGenderUpdated }) => {
 
       const res = await GenderService.getGender(genderId);
 
-      if (res.status == 200) {
+      if (res.status === 200) {
         setGender(res.data.gender.gender);
       } else {
         console.error(
@@ -65,9 +70,10 @@ const EditGenderForm: FC<EditGenderFormProps> = ({ onGenderUpdated }) => {
         );
       }
 
-    } catch (error: any) {
-      if (error.response && error.response.status === 422) {
-        setErrors(error.response.data.errors);
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError<ValidationErrorResponse>;
+      if (axiosError.response?.status === 422 && axiosError.response.data?.errors) {
+        setErrors(axiosError.response.data.errors);
       } else {
         console.error(
           "Unexpected server error occurred during updating gender:",

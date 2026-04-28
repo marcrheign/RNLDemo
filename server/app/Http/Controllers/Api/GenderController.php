@@ -35,7 +35,13 @@ class GenderController extends Controller
     }
 
     public function getGender($genderId) {
-       $gender = Gender::find($genderId);
+       $gender = Gender::where('is_deleted', false)->find($genderId);
+
+       if (!$gender) {
+        return response()->json([
+            'message' => 'Gender not found.'
+        ], 404);
+       }
 
        return response()->json([
         'gender' => $gender
@@ -54,6 +60,25 @@ class GenderController extends Controller
         return response()->json([
             'gender' => $gender,
             'message' => 'Gender Successfully Updated.'
+        ], 200);
+    }
+
+    public function deleteGender($genderId)
+    {
+        $gender = Gender::where('is_deleted', false)->find($genderId);
+
+        if (!$gender) {
+            return response()->json([
+                'message' => 'Gender not found.'
+            ], 404);
+        }
+
+        $gender->update([
+            'is_deleted' => true,
+        ]);
+
+        return response()->json([
+            'message' => 'Gender Successfully Deleted.'
         ], 200);
     }
 }

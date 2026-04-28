@@ -5,7 +5,7 @@ import Spinner from "../../../components/Spinner/Spinner";
 import { Link } from "react-router-dom";
 
 interface GenderColumns {
-  id: number
+  gender_id: number
   gender: string
 }
 
@@ -76,8 +76,12 @@ const GenderList: FC<GenderListProps> = ({ refreshKey }) => {
                     <TableCell className="px-4 py-3 text-start">{gender.gender}</TableCell>
                     <TableCell className="px-4 py-3 text-center">
                       <div className="flex justify-center items-center">
-                        <Link to={`/gender/edit/${gender.id}`} className="text-green-600 font-medium hover:underline">
+                        <Link to={`/gender/edit/${gender.gender_id}`} className="text-green-600 font-medium hover:underline">
                           Edit
+                        </Link>
+                        <span className="px-2 text-gray-300">|</span>
+                        <Link to={`/gender/delete/${gender.gender_id}`} className="text-red-600 font-medium hover:underline">
+                          Delete
                         </Link>
                       </div>
                     </TableCell>

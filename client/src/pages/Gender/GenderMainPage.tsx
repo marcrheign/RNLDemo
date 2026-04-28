@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import AddGenderForm from "./components/AddGenderForm";
 import GenderList from "./components/GenderList";
 import ToastMessage from "../../components/ToastMessage/ToastMessage";
@@ -14,12 +15,22 @@ showToastMessage,
 closeToastMessage,
 } = useToastMessage("", false);
 
+const location = useLocation();
+const navigate = useNavigate();
 
 const { refresh, handleRefresh } = useRefresh(false);
 
 useEffect(() => {
 document.title = "Gender Main Page";
 }, []);
+
+useEffect(() => {
+const messageFromState = (location.state as { toastMessage?: string } | null)?.toastMessage;
+if (messageFromState) {
+showToastMessage(messageFromState);
+navigate(location.pathname, { replace: true, state: null });
+}
+}, [location.pathname, location.state, navigate, showToastMessage]);
 
 return (
 <>
