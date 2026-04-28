@@ -1,13 +1,17 @@
-import { useState, type ChangeEvent, type FC, type FormEvent } from "react";
+import { useEffect, useState, type ChangeEvent, type FC, type FormEvent } from "react";
+import type { AxiosError } from "axios";
 import FloatingLabelInput from "../../../components/Input/FloatingLabelInput";
 import Modal from "../../../components/Modal";
 import FloatingLabelSelect from "../../../components/Select/FloatingLabelSelect";
 import SubmitButton from "../../../components/Button/SubmitButton";
 import CloseButton from "../../../components/Button/CloseButton";
+import GenderService from "../../../services/GenderService";
+import UserService, { type StoreUserPayload } from "../../../services/UserService";
 
 interface AddUserFormModalPros {
   isOpen: boolean
   onClose: () => void
+  onUserAdded: (message: string) => void
 }
 
 interface UserFormData {
@@ -32,38 +36,51 @@ interface UserFieldErrors {
   password_confirmation?: string[];
 }
 
-const AddUserFormModal: FC<AddUserFormModalPros> = ({ isOpen, onClose }) => {
+interface GenderOption {
+  gender_id: number;
+  gender: string;
+}
+
+interface ValidationErrorResponse {
+  errors: UserFieldErrors;
+}
+
+const defaultFormData: UserFormData = {
+  first_name: "",
+  middle_name: "",
+  last_name: "",
+  suffix_name: "",
+  gender: "",
+  birth_date: "",
+  username: "",
+  password: "",
+  password_confirmation: "",
+};
+
+const AddUserFormModal: FC<AddUserFormModalPros> = ({ isOpen, onClose, onUserAdded }) => {
   const [formData, setFormData] = useState<UserFormData>({
-    first_name: "",
-    middle_name: "",
-    last_name: "",
-    suffix_name: "",
-    gender: "",
-    birth_date: "",
-    username: "",
-    password: "",
-    password_confirmation: "",
+    ...defaultFormData,
   });
   const [errors, setErrors] = useState<UserFieldErrors>({});
+  const [genders, setGenders] = useState<GenderOption[]>([]);
+  const [loadingSave, setLoadingSave] = useState(false);
 
-  const genders = [
-    {
-      gender_id: '',
-      gender: 'Select Gender'
-    },
-    {
-      gender_id: 1,
-      gender: 'Male'
-    },
-    {
-      gender_id: 2,
-      gender: 'Female'
-    },
-    {
-      gender_id: 3,
-      gender: 'Other'
-    },
-  ]
+  const handleLoadGenders = async () => {
+    try {
+      const res = await GenderService.loadGenders();
+      if (res.status === 200) {
+        setGenders(res.data.genders ?? []);
+      }
+    } catch (error) {
+      console.error("Unexpected server error occurred during loading genders:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setErrors({});
+    void handleLoadGenders();
+  }, [isOpen]);
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -103,7 +120,42 @@ const AddUserFormModal: FC<AddUserFormModalPros> = ({ isOpen, onClose }) => {
       return;
     }
 
-    setErrors({});
+    void handleStoreUser();
+  };
+
+  const handleStoreUser = async () => {
+    try {
+      setLoadingSave(true);
+      setErrors({});
+
+      const payload: StoreUserPayload = {
+        first_name: formData.first_name.trim(),
+        middle_name: formData.middle_name.trim(),
+        last_name: formData.last_name.trim(),
+        suffix_name: formData.suffix_name.trim(),
+        gender_id: Number(formData.gender),
+        birth_date: formData.birth_date,
+        username: formData.username.trim(),
+        password: formData.password,
+        password_confirmation: formData.password_confirmation,
+      };
+
+      const res = await UserService.storeUser(payload);
+      if (res.status === 200) {
+        setFormData({ ...defaultFormData });
+        onClose();
+        onUserAdded(res.data?.message ?? "User Successfully Saved.");
+      }
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError<ValidationErrorResponse>;
+      if (axiosError.response?.status === 422 && axiosError.response.data?.errors) {
+        setErrors(axiosError.response.data.errors);
+      } else {
+        console.error("Unexpected server error occurred during saving user:", error);
+      }
+    } finally {
+      setLoadingSave(false);
+    }
   };
 
   return (
@@ -171,6 +223,7 @@ const AddUserFormModal: FC<AddUserFormModalPros> = ({ isOpen, onClose }) => {
                   errors={errors.gender}
                   required
                 >
+                  <option value="">Select Gender</option>
                   {genders.map((gender, index) => (
                     <option value={gender.gender_id} key={index}>
                       {gender.gender}
@@ -233,7 +286,11 @@ const AddUserFormModal: FC<AddUserFormModalPros> = ({ isOpen, onClose }) => {
           </div>
           <div className="flex justify-end gap-2">
             <CloseButton label="Close" onClose={onClose}/>
-            <SubmitButton label="Save User"/>
+            <SubmitButton
+              label="Save User"
+              loading={loadingSave}
+              loadinglabel="Saving User..."
+            />
           </div>
         </form>
       </Modal>
