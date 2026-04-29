@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent, type FC, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent, type FC, type FormEvent } from "react";
 import type { AxiosError } from "axios";
 import FloatingLabelInput from "../../../components/Input/FloatingLabelInput";
 import Modal from "../../../components/Modal";
@@ -34,6 +34,7 @@ interface UserFieldErrors {
   username?: string[];
   password?: string[];
   password_confirmation?: string[];
+  profile_picture?: string[];
 }
 
 interface GenderOption {
@@ -64,6 +65,14 @@ const AddUserFormModal: FC<AddUserFormModalPros> = ({ isOpen, onClose, onUserAdd
   const [errors, setErrors] = useState<UserFieldErrors>({});
   const [genders, setGenders] = useState<GenderOption[]>([]);
   const [loadingSave, setLoadingSave] = useState(false);
+  const [profilePicture, setProfilePicture] = useState<File | null>(null);
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const profilePreviewUrl = useMemo(() => {
+    if (!profilePicture) return "";
+    return URL.createObjectURL(profilePicture);
+  }, [profilePicture]);
 
   const handleLoadGenders = async () => {
     try {
@@ -82,6 +91,14 @@ const AddUserFormModal: FC<AddUserFormModalPros> = ({ isOpen, onClose, onUserAdd
     void handleLoadGenders();
   }, [isOpen]);
 
+  useEffect(() => {
+    return () => {
+      if (profilePreviewUrl) {
+        URL.revokeObjectURL(profilePreviewUrl);
+      }
+    };
+  }, [profilePreviewUrl]);
+
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
 
@@ -94,6 +111,51 @@ const AddUserFormModal: FC<AddUserFormModalPros> = ({ isOpen, onClose, onUserAdd
       ...prev,
       [name]: undefined,
     }));
+  };
+
+  const handleProfilePictureChange = (file: File | null) => {
+    if (!file) return;
+
+    const allowedTypes = ["image/png", "image/jpg", "image/jpeg"];
+    if (!allowedTypes.includes(file.type)) {
+      setErrors((prev) => ({
+        ...prev,
+        profile_picture: ["Please upload a PNG, JPG, or JPEG image."],
+      }));
+      return;
+    }
+
+    setProfilePicture(file);
+    setErrors((prev) => ({
+      ...prev,
+      profile_picture: undefined,
+    }));
+  };
+
+  const handleFileInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    handleProfilePictureChange(e.target.files?.[0] ?? null);
+  };
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDraggingFile(false);
+    handleProfilePictureChange(e.dataTransfer.files?.[0] ?? null);
+  };
+
+  const handleBrowseFile = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleRemoveProfilePicture = () => {
+    setProfilePicture(null);
+    setErrors((prev) => ({
+      ...prev,
+      profile_picture: undefined,
+    }));
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const handleSubmit = (e: FormEvent) => {
@@ -133,6 +195,7 @@ const AddUserFormModal: FC<AddUserFormModalPros> = ({ isOpen, onClose, onUserAdd
         middle_name: formData.middle_name.trim(),
         last_name: formData.last_name.trim(),
         suffix_name: formData.suffix_name.trim(),
+        profile_picture: profilePicture,
         gender_id: Number(formData.gender),
         birth_date: formData.birth_date,
         username: formData.username.trim(),
@@ -143,6 +206,7 @@ const AddUserFormModal: FC<AddUserFormModalPros> = ({ isOpen, onClose, onUserAdd
       const res = await UserService.storeUser(payload);
       if (res.status === 200) {
         setFormData({ ...defaultFormData });
+        setProfilePicture(null);
         onClose();
         onUserAdded(res.data?.message ?? "User Successfully Saved.");
       }
@@ -161,10 +225,75 @@ const AddUserFormModal: FC<AddUserFormModalPros> = ({ isOpen, onClose, onUserAdd
   return (
     <>
       <Modal isOpen={isOpen} onClose={onClose} showCloseButton>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <h1 className="text-2xl border-b border-gray-100 p-4 font-semibold mb-4">
             Add User Form
           </h1>
+
+          <div className="mb-4 border-b border-gray-100 pb-4">
+            <label className="mb-2 block text-sm font-medium text-gray-600">
+              Profile Picture
+            </label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".png,.jpg,.jpeg"
+              className="hidden"
+              onChange={handleFileInputChange}
+            />
+            <div
+              className={`rounded-xl border border-dashed px-6 py-8 text-center transition ${
+                isDraggingFile ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-white"
+              }`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDraggingFile(true);
+              }}
+              onDragLeave={() => setIsDraggingFile(false)}
+              onDrop={handleDrop}
+            >
+              {profilePreviewUrl ? (
+                <div className="flex min-h-40 items-center justify-center">
+                  <img
+                    src={profilePreviewUrl}
+                    alt="Profile preview"
+                    className="h-32 w-32 rounded-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 text-gray-500">
+                    <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 16V5m0 0-4 4m4-4 4 4M5 16.5v1A1.5 1.5 0 0 0 6.5 19h11a1.5 1.5 0 0 0 1.5-1.5v-1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-base font-semibold text-gray-700">Drag & Drop File Here</p>
+                    <p className="mt-1 text-sm text-gray-500">Drag and drop your PNG, JPG or JPEG</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="text-sm font-semibold text-blue-600 hover:underline"
+                    onClick={handleBrowseFile}
+                  >
+                    Browse File
+                  </button>
+                </div>
+              )}
+            </div>
+            {profilePreviewUrl && (
+              <button
+                type="button"
+                className="mt-3 w-full rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700"
+                onClick={handleRemoveProfilePicture}
+              >
+                Remove Profile Picture
+              </button>
+            )}
+            {errors.profile_picture && errors.profile_picture.length > 0 && (
+              <span className="mt-2 block text-xs text-red-600">{errors.profile_picture[0]}</span>
+            )}
+          </div>
 
           <div className="grid grid-cols-2 gap-4 border-b border-gray-100 mb-4">
 

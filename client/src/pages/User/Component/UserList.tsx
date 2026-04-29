@@ -16,6 +16,7 @@ interface UserRow {
   middle_name: string | null;
   last_name: string;
   suffix_name: string | null;
+  profile_picture: string | null;
   gender_id: number | null;
   gender_name: string | null;
   birth_date: string;
@@ -28,8 +29,9 @@ const Userlist: FC<UserlistProps>= ({onAdduser, onEditUser, onDeleteUser, refres
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const handleLoadUsers = useCallback(async (nextPage = 1, append = false) => {
+  const handleLoadUsers = useCallback(async (nextPage = 1, append = false, search = "") => {
     try {
       if (append) {
         setLoadingMore(true);
@@ -37,7 +39,7 @@ const Userlist: FC<UserlistProps>= ({onAdduser, onEditUser, onDeleteUser, refres
         setLoading(true);
       }
 
-      const res = await UserService.loadUsers(nextPage);
+      const res = await UserService.loadUsers(nextPage, search);
       if (res.status === 200) {
         const nextUsers = res.data.users ?? [];
         setUsers((prev) => (append ? [...prev, ...nextUsers] : nextUsers));
@@ -56,8 +58,12 @@ const Userlist: FC<UserlistProps>= ({onAdduser, onEditUser, onDeleteUser, refres
   }, []);
 
   useEffect(() => {
-    void handleLoadUsers(1, false);
-  }, [handleLoadUsers, refreshKey]);
+    const timeoutId = window.setTimeout(() => {
+      void handleLoadUsers(1, false, searchTerm);
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [handleLoadUsers, refreshKey, searchTerm]);
 
   const handleScroll = (e: UIEvent<HTMLDivElement>) => {
     if (loading || loadingMore || !hasMore) return;
@@ -66,7 +72,7 @@ const Userlist: FC<UserlistProps>= ({onAdduser, onEditUser, onDeleteUser, refres
     const isNearBottom = scrollHeight - scrollTop - clientHeight < 80;
 
     if (isNearBottom) {
-      void handleLoadUsers(page + 1, true);
+      void handleLoadUsers(page + 1, true, searchTerm);
     }
   };
 
@@ -76,9 +82,34 @@ const Userlist: FC<UserlistProps>= ({onAdduser, onEditUser, onDeleteUser, refres
     return `${user.last_name}, ${user.first_name}${middlePart}${suffixPart}`.trim();
   };
 
+  const getUserInitials = (user: UserRow) => {
+    const initials = `${user.first_name?.[0] ?? ""}${user.last_name?.[0] ?? ""}`.toUpperCase();
+    return initials || "U";
+  };
+
+  const getProfilePictureUrl = (profilePicture: string | null) => {
+    if (!profilePicture) return null;
+    return `http://localhost/RNLDemo/server/public/${profilePicture}`;
+  };
+
+  const parseBirthDate = (birthDate: string) => {
+    if (!birthDate) return null;
+
+    const datePart = birthDate.split("T")[0];
+    const [year, month, day] = datePart.split("-").map(Number);
+
+    if (!year || !month || !day) {
+      return null;
+    }
+
+    return new Date(year, month - 1, day);
+  };
+
   const getAge = (birthDate: string) => {
+    const dob = parseBirthDate(birthDate);
+    if (!dob) return "-";
+
     const today = new Date();
-    const dob = new Date(birthDate);
     let age = today.getFullYear() - dob.getFullYear();
     const monthDiff = today.getMonth() - dob.getMonth();
     const dayDiff = today.getDate() - dob.getDate();
@@ -92,11 +123,9 @@ const Userlist: FC<UserlistProps>= ({onAdduser, onEditUser, onDeleteUser, refres
 
   const formatBirthDate = (birthDate: string) => {
     if (!birthDate) return "-";
-    const parsedDate = new Date(birthDate);
-    if (Number.isNaN(parsedDate.getTime())) {
-      return birthDate;
-    }
-    return parsedDate.toISOString().split("T")[0];
+
+    const datePart = birthDate.split("T")[0];
+    return /^\d{4}-\d{2}-\d{2}$/.test(datePart) ? datePart : birthDate;
   };
 
   return (
@@ -109,7 +138,20 @@ const Userlist: FC<UserlistProps>= ({onAdduser, onEditUser, onDeleteUser, refres
           <Table>
             <caption>
                 <div className="border-b border-gray-100">
-                    <div className="p-4 flex justify-end">
+                    <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="w-full max-w-xs">
+                          <label htmlFor="user-search" className="mb-1 block text-xs font-medium text-gray-500">
+                            Search
+                          </label>
+                          <input
+                            id="user-search"
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            placeholder="Name, gender, age, birthday"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                          />
+                        </div>
                         <button
                           type="button"
                           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-lg transition cursor-pointer"
@@ -167,11 +209,24 @@ const Userlist: FC<UserlistProps>= ({onAdduser, onEditUser, onDeleteUser, refres
               ) : users.map((user, index) => (
                 <TableRow className="hover:bg-gray-100" key={index}>
                   <TableCell className="px-4 py-3 text-center">
-                    {user.id}
+                    {(page - 1) * 15 + index + 1}
                   </TableCell>
 
                   <TableCell className="px-4 py-3 text-left">
-                    {getFullName(user)}
+                    <div className="flex items-center gap-4">
+                      {getProfilePictureUrl(user.profile_picture) ? (
+                        <img
+                          src={getProfilePictureUrl(user.profile_picture) ?? ""}
+                          alt={getFullName(user)}
+                          className="h-9 w-9 rounded-full object-cover ring-1 ring-gray-200"
+                        />
+                      ) : (
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 text-xs font-semibold text-gray-600">
+                          {getUserInitials(user)}
+                        </div>
+                      )}
+                      <span>{getFullName(user)}</span>
+                    </div>
                   </TableCell>
 
                   <TableCell className="px-4 py-3 text-center">

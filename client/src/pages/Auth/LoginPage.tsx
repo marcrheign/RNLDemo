@@ -16,8 +16,6 @@ interface ValidationErrorResponse {
 }
 
 const LoginPage = () => {
-  const uploadedLoginImage =
-    "/@fs/C:/Users/PC/.cursor/projects/c-xampp-htdocs-RNLDemo/assets/c__Users_PC_AppData_Roaming_Cursor_User_workspaceStorage_f5efa903bf5f44ac1c768120f26c0f39_images_image-c8380dcc-3b9e-4264-bd95-1720c3f722cb.png";
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -26,7 +24,7 @@ const LoginPage = () => {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    document.title = "Login";
+    document.title = "RNLDemo | Login";
   }, []);
 
   const handleLogin = async (e: FormEvent) => {
@@ -67,15 +65,14 @@ const LoginPage = () => {
         </div>
       )}
 
-      <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+      <div className="w-full max-w-6xl grid grid-cols-1 gap-8 items-center">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 max-w-md mx-auto w-full">
           <div className="text-center mb-6">
-            <img
-              src="https://flowbite.com/docs/images/logo.svg"
-              alt="Company Logo"
-              className="w-10 h-10 mx-auto mb-2"
-            />
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-green-100 text-lg font-semibold text-green-700">
+              RN
+            </div>
             <h1 className="text-3xl font-semibold text-gray-900">Sign in to your account</h1>
+            <p className="mt-2 text-sm text-gray-500">Access the RNLDemo dashboard and management pages.</p>
           </div>
 
           <form onSubmit={handleLogin}>
@@ -113,13 +110,6 @@ const LoginPage = () => {
           </form>
         </div>
 
-        <div className="hidden md:flex justify-center">
-          <img
-            src={uploadedLoginImage}
-            alt="Company Brand"
-            className="max-w-lg w-full object-contain"
-          />
-        </div>
       </div>
     </div>
   );

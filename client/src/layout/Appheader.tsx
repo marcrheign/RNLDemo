@@ -25,6 +25,12 @@ const AppHeader = () => {
   const displayName =
     `${storedUser.first_name ?? ""} ${storedUser.last_name ?? ""}`.trim() || storedUser.username || "User";
   const displayUsername = storedUser.username || "Not available";
+  const userInitials = displayName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("") || "U";
 
   const handleLogout = async () => {
     try {
@@ -50,17 +56,21 @@ const AppHeader = () => {
   <path stroke="currentColor" strokeLinecap="round" strokeWidth="2" d="M5 7h14M5 12h14M5 17h10"/>
    </svg>
          </button>
-        <a href="https://flowbite.com" className="flex ms-2 md:me-24">
-          <img src="https://flowbite.com/docs/images/logo.svg" className="h-6 me-3" alt="FlowBite Logo" />
-          <span className="self-center whitespace-nowrap text-lg font-semibold text-white">Flowbite</span>
-        </a>
+        <div className="flex items-center ms-2 md:me-24">
+          <div className="me-3 flex h-9 w-9 items-center justify-center rounded-xl bg-green-100 text-sm font-semibold text-green-700">
+            RN
+          </div>
+          <span className="self-center whitespace-nowrap text-lg font-semibold text-white">RNLDemo</span>
+        </div>
       </div>
       <div className="flex items-center">
           <div className="relative flex items-center ms-3">
             <div>
               <button type="button" onClick={toggleUserMenu} className="flex rounded-full bg-slate-700 text-sm focus:ring-4 focus:ring-slate-500" aria-expanded={isOpen}>
                 <span className="sr-only">Open user menu</span>
-                <img className="w-8 h-8 rounded-full" src="https://flowbite.com/docs/images/people/profile-picture-5.jpg" alt="user photo" />
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-green-200 text-xs font-semibold text-green-800">
+                  {userInitials}
+                </span>
               </button>
             </div>
             <div className={`absolute right-0 top-full mt-2 z-[60] ${isOpen ? "block" : "hidden"} bg-slate-800 border border-slate-700 rounded-md shadow-lg w-44`} id="dropdown-user">
